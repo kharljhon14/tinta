@@ -43,3 +43,5 @@ Thumbs.db
 
 # Static analysis or tools
 coverage.out
+
+.envrc
