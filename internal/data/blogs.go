@@ -9,5 +9,5 @@ type Blog struct {
 	Author    string    `json:"author"`
 	Content   string    `json:"content"`
 	Version   int32     `json:"version"`
-	Tags      []string  `json:"tags,omitempty"`
+	Tags      []string  `json:"tags,omitzero"`
 }
