@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -17,31 +16,33 @@ func (app *application) createBlogHandler(w http.ResponseWriter, r *http.Request
 		Tags    []string `json:"tags"`
 	}
 
-	v := validator.New()
-
-	v.Check(input.Title != "", "title", "must be provided")
-	v.Check(len(input.Title) <= 255, "title", "must not be more than 255 bytes long")
-
-	v.Check(input.Content != "", "content", "must be provided")
-	v.Check(len(input.Content) <= 500, "content", "must not be more than 500 bytes long")
-
-	v.Check(input.Tags != nil, "tags", "must be provided")
-	v.Check(len(input.Tags) >= 0, "tags", "must contain at least 1 tag")
-	v.Check(len(input.Tags) <= 5, "tags", "must not contain more than 5 genres")
-	v.Check(validator.Unique(input.Tags), "tags", "must not contain duplicate values")
-
-	if !v.Valid() {
-		app.faildValidationResponse(w, r, v.Errors)
-		return
-	}
-
 	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", input)
+	v := validator.New()
+
+	blog := &data.Blog{
+		ID:        1,
+		Content:   input.Content,
+		Title:     input.Title,
+		Tags:      input.Tags,
+		Author:    "Kharl",
+		Version:   1,
+		CreatedAt: time.Now(),
+	}
+
+	if data.ValidateBlog(v, blog); !v.Valid() {
+		app.faildValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"blog": blog}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
 
 func (app *application) showBlogHandlder(w http.ResponseWriter, r *http.Request) {
