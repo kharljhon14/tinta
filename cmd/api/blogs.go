@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,7 +10,20 @@ import (
 )
 
 func (app *application) createBlogHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Create Blog")
+
+	var input struct {
+		Title   string   `json:"title"`
+		Content string   `json:"content"`
+		Tags    []string `json:"tags"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	fmt.Fprintf(w, "%+v\n", input)
 }
 
 func (app *application) showBlogHandlder(w http.ResponseWriter, r *http.Request) {
