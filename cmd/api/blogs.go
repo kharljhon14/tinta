@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -25,6 +26,7 @@ func (app *application) createBlogHandler(w http.ResponseWriter, r *http.Request
 
 	v := validator.New()
 
+	// TODO: Get author from request
 	blog := &data.Blog{
 
 		Content:   input.Content,
@@ -63,13 +65,15 @@ func (app *application) showBlogHandlder(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	blog := data.Blog{
-		ID:        id,
-		CreatedAt: time.Now(),
-		Title:     "Sample Title",
-		Author:    "Kharl",
-		Tags:      []string{"Tech", "Guide", "Web"},
-		Version:   1,
+	blog, err := app.models.Blogs.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErroRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"blog": blog}, nil)

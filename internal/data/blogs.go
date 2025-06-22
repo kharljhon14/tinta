@@ -18,7 +18,7 @@ type Blog struct {
 	Title     string    `json:"title"`
 	Author    string    `json:"author"`
 	Content   string    `json:"content"`
-	Version   int32     `json:"version"`
+	Version   int32     `json:"version,omitzero"`
 	Tags      []string  `json:"tags,omitzero"`
 }
 
@@ -26,7 +26,7 @@ func (b *BlogModel) Insert(blog *Blog) error {
 	query := `
 		INSERT INTO blogs (title, content, author, tags)
 		VALUES ($1, $2, $3, $4)
-		RETURNING id, created_at, verion;
+		RETURNING id, created_at, version;
 	`
 
 	args := []any{
@@ -44,7 +44,32 @@ func (b *BlogModel) Insert(blog *Blog) error {
 }
 
 func (b *BlogModel) Get(id int64) (*Blog, error) {
-	return nil, nil
+	if id < 1 {
+		return nil, ErroRecordNotFound
+	}
+
+	query := `
+		SElECT id, title, content, author, tags, created_at 
+		FROM blogs
+		WHERE id = $1;
+	`
+
+	var blog Blog
+
+	err := b.DB.QueryRow(query, id).Scan(
+		&blog.ID,
+		&blog.Title,
+		&blog.Content,
+		&blog.Author,
+		pq.Array(&blog.Tags),
+		&blog.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &blog, nil
 }
 
 func (b *BlogModel) GetLatest() ([]*Blog, error) {
