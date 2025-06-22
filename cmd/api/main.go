@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/kharljhon14/tinta/internal/data"
 	_ "github.com/lib/pq"
 )
 
@@ -29,6 +30,7 @@ type config struct {
 type application struct {
 	config config
 	logger *slog.Logger
+	models data.Models
 }
 
 func main() {
@@ -44,11 +46,6 @@ func main() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	app := &application{
-		config: cfg,
-		logger: logger,
-	}
-
 	db, err := openDB(cfg)
 	if err != nil {
 		logger.Error(err.Error())
@@ -56,6 +53,12 @@ func main() {
 	}
 
 	defer db.Close()
+
+	app := &application{
+		config: cfg,
+		logger: logger,
+		models: data.NewModels(db),
+	}
 
 	logger.Info("database connection pool connection")
 

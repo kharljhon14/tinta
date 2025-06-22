@@ -1,10 +1,15 @@
 package data
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/kharljhon14/tinta/internal/validator"
 )
+
+type BlogModel struct {
+	DB *sql.DB
+}
 
 type Blog struct {
 	ID        int64     `json:"id"`
@@ -14,6 +19,26 @@ type Blog struct {
 	Content   string    `json:"content"`
 	Version   int32     `json:"version"`
 	Tags      []string  `json:"tags,omitzero"`
+}
+
+func (b *BlogModel) Insert(blog *Blog) error {
+	return nil
+}
+
+func (b *BlogModel) Get(id int64) (*Blog, error) {
+	return nil, nil
+}
+
+func (b *BlogModel) GetLatest() ([]*Blog, error) {
+	return nil, nil
+}
+
+func (b *BlogModel) Update(blog *Blog) error {
+	return nil
+}
+
+func (b *BlogModel) Delete(id int64) error {
+	return nil
 }
 
 func ValidateBlog(v *validator.Validator, blog *Blog) {
