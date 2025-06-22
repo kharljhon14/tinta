@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -25,7 +26,7 @@ func (app *application) createBlogHandler(w http.ResponseWriter, r *http.Request
 	v := validator.New()
 
 	blog := &data.Blog{
-		ID:        1,
+
 		Content:   input.Content,
 		Title:     input.Title,
 		Tags:      input.Tags,
@@ -39,7 +40,16 @@ func (app *application) createBlogHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"blog": blog}, nil)
+	err = app.models.Blogs.Insert(blog)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/blogs/%d", blog.ID))
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"blog": blog}, headers)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

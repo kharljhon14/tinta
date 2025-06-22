@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kharljhon14/tinta/internal/validator"
+	"github.com/lib/pq"
 )
 
 type BlogModel struct {
@@ -22,7 +23,24 @@ type Blog struct {
 }
 
 func (b *BlogModel) Insert(blog *Blog) error {
-	return nil
+	query := `
+		INSERT INTO blogs (title, content, author, tags)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at, verion;
+	`
+
+	args := []any{
+		blog.Title,
+		blog.Content,
+		blog.Author,
+		pq.Array(blog.Tags),
+	}
+
+	return b.DB.QueryRow(query, args...).Scan(
+		&blog.ID,
+		&blog.CreatedAt,
+		&blog.Version,
+	)
 }
 
 func (b *BlogModel) Get(id int64) (*Blog, error) {
