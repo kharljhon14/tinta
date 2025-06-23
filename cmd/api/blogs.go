@@ -92,8 +92,8 @@ func (app *application) updateBlogHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	var input struct {
-		Title   string   `json:"title"`
-		Content string   `json:"content"`
+		Title   *string  `json:"title"`
+		Content *string  `json:"content"`
 		Tags    []string `json:"tags"`
 	}
 
@@ -115,9 +115,17 @@ func (app *application) updateBlogHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	blog.Title = input.Title
-	blog.Content = input.Content
-	blog.Tags = input.Tags
+	if input.Title != nil {
+		blog.Title = *input.Title
+	}
+
+	if input.Content != nil {
+		blog.Content = *input.Content
+	}
+
+	if input.Tags != nil {
+		blog.Tags = input.Tags
+	}
 
 	v := validator.New()
 
