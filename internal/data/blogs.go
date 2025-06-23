@@ -45,7 +45,7 @@ func (b *BlogModel) Insert(blog *Blog) error {
 
 func (b *BlogModel) Get(id int64) (*Blog, error) {
 	if id < 1 {
-		return nil, ErroRecordNotFound
+		return nil, sql.ErrNoRows
 	}
 
 	query := `
@@ -101,6 +101,29 @@ func (b *BlogModel) Update(blog *Blog) error {
 }
 
 func (b *BlogModel) Delete(id int64) error {
+	if id < 1 {
+		return sql.ErrNoRows
+	}
+
+	query := `
+		DELETE FROM blogs
+		WHERE id = $1;
+	`
+
+	result, err := b.DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
 	return nil
 }
 
