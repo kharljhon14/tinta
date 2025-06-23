@@ -82,3 +82,57 @@ func (app *application) showBlogHandlder(w http.ResponseWriter, r *http.Request)
 	}
 
 }
+
+func (app *application) updateBlogHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIDParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	var input struct {
+		Title   string   `json:"title"`
+		Content string   `json:"content"`
+		Tags    []string `json:"tags"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	blog, err := app.models.Blogs.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErroRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+
+		return
+	}
+
+	blog.Title = input.Title
+	blog.Content = input.Content
+	blog.Tags = input.Tags
+
+	v := validator.New()
+
+	if data.ValidateBlog(v, blog); !v.Valid() {
+		app.faildValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Blogs.Update(blog)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"blog": blog}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

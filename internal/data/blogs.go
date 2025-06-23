@@ -49,7 +49,7 @@ func (b *BlogModel) Get(id int64) (*Blog, error) {
 	}
 
 	query := `
-		SElECT id, title, content, author, tags, created_at 
+		SElECT id, title, content, author, tags, created_at, version
 		FROM blogs
 		WHERE id = $1;
 	`
@@ -63,6 +63,7 @@ func (b *BlogModel) Get(id int64) (*Blog, error) {
 		&blog.Author,
 		pq.Array(&blog.Tags),
 		&blog.CreatedAt,
+		&blog.Version,
 	)
 
 	if err != nil {
@@ -77,7 +78,26 @@ func (b *BlogModel) GetLatest() ([]*Blog, error) {
 }
 
 func (b *BlogModel) Update(blog *Blog) error {
-	return nil
+	query := `
+		UPDATE blogs 
+		SET title = $1,
+		content = $2,
+		tags = $3,
+		version = version + 1
+		WHERE id = $4
+		RETURNING version;
+	`
+
+	args := []any{
+		blog.Title,
+		blog.Content,
+		pq.Array(blog.Tags),
+		blog.ID,
+	}
+
+	return b.DB.QueryRow(query, args...).Scan(
+		&blog.Version,
+	)
 }
 
 func (b *BlogModel) Delete(id int64) error {
