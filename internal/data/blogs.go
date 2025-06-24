@@ -82,13 +82,15 @@ func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blo
 	query := `
 		SELECT id, title, content, author, tags, created_at, version
 		FROM blogs
+		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		AND (tags @> $2 OR $2 = '{}')
 		ORDER BY id
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := b.DB.QueryContext(ctx, query)
+	rows, err := b.DB.QueryContext(ctx, query, title, pq.Array(tags))
 	if err != nil {
 		return nil, err
 	}
