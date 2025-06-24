@@ -103,14 +103,25 @@ func (app *application) listBlogsHandler(w http.ResponseWriter, r *http.Request)
 
 	input.Page = app.readInt(qs, "page", 1, v)
 	input.PageSize = app.readInt(qs, "page_size", 20, v)
+
 	input.Sort = app.readString(qs, "sort", "id")
+	input.Filters.SortSafeList = []string{"id", "title", "author", "creatd_at", "-id", "-title", "-author", "-created_at"}
 
 	if data.ValidateFilters(v, input.Filters); !v.Valid() {
 		app.faildValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", input)
+	blogs, err := app.models.Blogs.GetAll(input.Title, input.Tags, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"blogs": blogs}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
 
 func (app *application) updateBlogHandler(w http.ResponseWriter, r *http.Request) {

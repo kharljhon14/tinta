@@ -78,8 +78,49 @@ func (b *BlogModel) Get(id int64) (*Blog, error) {
 	return &blog, nil
 }
 
-func (b *BlogModel) GetLatest() ([]*Blog, error) {
-	return nil, nil
+func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blog, error) {
+	query := `
+		SELECT id, title, content, author, tags, created_at, version
+		FROM blogs
+		ORDER BY id
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := b.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	blogs := []*Blog{}
+
+	for rows.Next() {
+		var blog Blog
+
+		err := rows.Scan(
+			&blog.ID,
+			&blog.Title,
+			&blog.Content,
+			&blog.Author,
+			pq.Array(&blog.Tags),
+			&blog.CreatedAt,
+			&blog.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		blogs = append(blogs, &blog)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return blogs, nil
 }
 
 func (b *BlogModel) Update(blog *Blog) error {
