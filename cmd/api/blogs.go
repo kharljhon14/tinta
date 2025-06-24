@@ -89,11 +89,9 @@ func (app *application) listBlogsHandler(w http.ResponseWriter, r *http.Request)
 
 	// For holding query string values
 	var input struct {
-		Title    string
-		Tags     []string
-		Page     int
-		PageSize int
-		Sort     string
+		Title string
+		Tags  []string
+		data.Filters
 	}
 
 	v := validator.New()
@@ -107,7 +105,7 @@ func (app *application) listBlogsHandler(w http.ResponseWriter, r *http.Request)
 	input.PageSize = app.readInt(qs, "page_size", 20, v)
 	input.Sort = app.readString(qs, "sort", "id")
 
-	if !v.Valid() {
+	if data.ValidateFilters(v, input.Filters); !v.Valid() {
 		app.faildValidationResponse(w, r, v.Errors)
 		return
 	}
