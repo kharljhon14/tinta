@@ -1,6 +1,11 @@
 package data
 
-import "github.com/kharljhon14/tinta/internal/validator"
+import (
+	"slices"
+	"strings"
+
+	"github.com/kharljhon14/tinta/internal/validator"
+)
 
 type Filters struct {
 	Page         int
@@ -16,4 +21,19 @@ func ValidateFilters(v *validator.Validator, f Filters) {
 	v.Check(f.PageSize <= 100, "pag_size", "must be maximum of 100")
 
 	v.Check(validator.PermittedValue(f.Sort, f.SortSafeList...), "sort", "invalid sort value")
+}
+
+func (f Filters) sortColumn() string {
+	if slices.Contains(f.SortSafeList, f.Sort) {
+		return strings.TrimPrefix(f.Sort, "-")
+	}
+
+	panic("unsafe sort parameter " + f.Sort)
+}
+
+func (f Filters) sortDirection() string {
+	if strings.HasPrefix(f.Sort, "-") {
+		return "DESC"
+	}
+	return "ASC"
 }

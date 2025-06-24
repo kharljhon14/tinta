@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/kharljhon14/tinta/internal/validator"
@@ -79,13 +80,12 @@ func (b *BlogModel) Get(id int64) (*Blog, error) {
 }
 
 func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blog, error) {
-	query := `
+	query := fmt.Sprintf(`
 		SELECT id, title, content, author, tags, created_at, version
 		FROM blogs
 		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (tags @> $2 OR $2 = '{}')
-		ORDER BY id
-	`
+		ORDER BY %s %s, id ASC`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
