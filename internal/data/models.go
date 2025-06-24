@@ -2,6 +2,11 @@ package data
 
 import (
 	"database/sql"
+	"errors"
+)
+
+var (
+	ErrEditConflict = errors.New("edit conflict")
 )
 
 type Models struct {

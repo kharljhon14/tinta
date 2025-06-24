@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/kharljhon14/tinta/internal/data"
@@ -136,8 +137,20 @@ func (app *application) updateBlogHandler(w http.ResponseWriter, r *http.Request
 
 	err = app.models.Blogs.Update(blog)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
+	}
+
+	if r.Header.Get("X-Expected-Header") != "" {
+		if strconv.Itoa(int(blog.Version)) != r.Header.Get("X-Expected-Version") {
+			app.editConflictResponse(w, r)
+			return
+		}
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"blog": blog}, nil)

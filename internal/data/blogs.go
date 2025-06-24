@@ -1,7 +1,9 @@
 package data
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/kharljhon14/tinta/internal/validator"
@@ -54,9 +56,12 @@ func (b *BlogModel) Get(id int64) (*Blog, error) {
 		WHERE id = $1;
 	`
 
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	var blog Blog
 
-	err := b.DB.QueryRow(query, id).Scan(
+	err := b.DB.QueryRowContext(ctx, query, id).Scan(
 		&blog.ID,
 		&blog.Title,
 		&blog.Content,
@@ -84,7 +89,7 @@ func (b *BlogModel) Update(blog *Blog) error {
 		content = $2,
 		tags = $3,
 		version = version + 1
-		WHERE id = $4
+		WHERE id = $4 AND version = $5
 		RETURNING version;
 	`
 
@@ -95,9 +100,22 @@ func (b *BlogModel) Update(blog *Blog) error {
 		blog.ID,
 	}
 
-	return b.DB.QueryRow(query, args...).Scan(
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := b.DB.QueryRowContext(ctx, query, args...).Scan(
 		&blog.Version,
 	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (b *BlogModel) Delete(id int64) error {
@@ -110,7 +128,10 @@ func (b *BlogModel) Delete(id int64) error {
 		WHERE id = $1;
 	`
 
-	result, err := b.DB.Exec(query, id)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := b.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
