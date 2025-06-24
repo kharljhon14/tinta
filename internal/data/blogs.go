@@ -85,12 +85,16 @@ func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blo
 		FROM blogs
 		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (tags @> $2 OR $2 = '{}')
-		ORDER BY %s %s, id ASC`, filters.sortColumn(), filters.sortDirection())
+		ORDER BY %s %s, id ASC
+		LIMIT $3 OFFSET $4
+		`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := b.DB.QueryContext(ctx, query, title, pq.Array(tags))
+	args := []any{title, pq.Array(tags), filters.limit(), filters.offset()}
+
+	rows, err := b.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
