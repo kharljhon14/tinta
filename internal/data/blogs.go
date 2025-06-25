@@ -79,9 +79,9 @@ func (b *BlogModel) Get(id int64) (*Blog, error) {
 	return &blog, nil
 }
 
-func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blog, error) {
+func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blog, Metadata, error) {
 	query := fmt.Sprintf(`
-		SELECT id, title, content, author, tags, created_at, version
+		SELECT count(*) OVER(), id, title, content, author, tags, created_at, version
 		FROM blogs
 		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND (tags @> $2 OR $2 = '{}')
@@ -96,17 +96,18 @@ func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blo
 
 	rows, err := b.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
-
 	defer rows.Close()
 
+	totalRecords := 0
 	blogs := []*Blog{}
 
 	for rows.Next() {
 		var blog Blog
 
 		err := rows.Scan(
+			&totalRecords,
 			&blog.ID,
 			&blog.Title,
 			&blog.Content,
@@ -116,17 +117,18 @@ func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blo
 			&blog.Version,
 		)
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 
 		blogs = append(blogs, &blog)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return blogs, nil
+	metadata := calculateMetadate(totalRecords, filters.Page, filters.PageSize)
+	return blogs, metadata, nil
 }
 
 func (b *BlogModel) Update(blog *Blog) error {

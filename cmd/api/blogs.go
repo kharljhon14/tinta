@@ -112,13 +112,13 @@ func (app *application) listBlogsHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	blogs, err := app.models.Blogs.GetAll(input.Title, input.Tags, input.Filters)
+	blogs, metadata, err := app.models.Blogs.GetAll(input.Title, input.Tags, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"blogs": blogs}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"blogs": blogs, "metadata": metadata}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
