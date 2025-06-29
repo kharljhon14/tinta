@@ -25,7 +25,7 @@ type Blog struct {
 	Tags      []string  `json:"tags,omitzero"`
 }
 
-func (b *BlogModel) Insert(blog *Blog) error {
+func (b BlogModel) Insert(blog *Blog) error {
 	query := `
 		INSERT INTO blogs (title, content, author, tags)
 		VALUES ($1, $2, $3, $4)
@@ -46,7 +46,7 @@ func (b *BlogModel) Insert(blog *Blog) error {
 	)
 }
 
-func (b *BlogModel) Get(id int64) (*Blog, error) {
+func (b BlogModel) Get(id int64) (*Blog, error) {
 	if id < 1 {
 		return nil, sql.ErrNoRows
 	}
@@ -79,7 +79,7 @@ func (b *BlogModel) Get(id int64) (*Blog, error) {
 	return &blog, nil
 }
 
-func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blog, Metadata, error) {
+func (b BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blog, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT count(*) OVER(), id, title, content, author, tags, created_at, version
 		FROM blogs
@@ -131,7 +131,7 @@ func (b *BlogModel) GetAll(title string, tags []string, filters Filters) ([]*Blo
 	return blogs, metadata, nil
 }
 
-func (b *BlogModel) Update(blog *Blog) error {
+func (b BlogModel) Update(blog *Blog) error {
 	query := `
 		UPDATE blogs 
 		SET title = $1,
@@ -167,7 +167,7 @@ func (b *BlogModel) Update(blog *Blog) error {
 	return nil
 }
 
-func (b *BlogModel) Delete(id int64) error {
+func (b BlogModel) Delete(id int64) error {
 	if id < 1 {
 		return sql.ErrNoRows
 	}
