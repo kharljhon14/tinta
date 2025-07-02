@@ -31,6 +31,14 @@ func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
 	v.Check(len(tokenPlaintext) == 26, "token", "must be 26 bytes long")
 }
 
+func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error) {
+	token := generateToken(userID, ttl, scope)
+
+	err := m.Insert(token)
+
+	return token, err
+}
+
 func (m TokenModel) Insert(token *Token) error {
 	query := `
 		INSERT INTO tokens
